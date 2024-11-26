@@ -1,11 +1,14 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Model, Document } from 'mongoose';
+import { dbConnect } from '@/lib/dbConnect';
 
-export interface Message extends Document {
+// Message Interface
+export interface IMessage extends Document {
   content: string;
   createdAt: Date;
 }
 
-const MessageSchema: Schema<Message> = new mongoose.Schema({
+// Message Schema
+const MessageSchema: Schema<IMessage> = new mongoose.Schema({
   content: {
     type: String,
     required: true,
@@ -17,7 +20,8 @@ const MessageSchema: Schema<Message> = new mongoose.Schema({
   },
 });
 
-export interface User extends Document {
+// User Interface
+export interface IUser extends Document {
   username: string;
   email: string;
   password: string;
@@ -25,11 +29,11 @@ export interface User extends Document {
   verifyCodeExpiry: Date; 
   isVerified: boolean;
   isAcceptingMessages: boolean;
-  messages: Message[];
+  messages: IMessage[];
 }
 
-// Updated User schema
-const UserSchema: Schema<User> = new mongoose.Schema({
+// User Schema
+const UserSchema: Schema<IUser> = new mongoose.Schema({
   username: {
     type: String,
     required: [true, 'Username is required'],
@@ -65,8 +69,80 @@ const UserSchema: Schema<User> = new mongoose.Schema({
   messages: [MessageSchema],
 });
 
-//console.log(mongoose.models.User);
+// Ensure connection and get model
+const getModel = async (): Promise<Model<IUser>> => {
+  await dbConnect();
+  return mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+};
 
-const UserModel = (mongoose.models.User as mongoose.Model<User>) || mongoose.model<User>('User', UserSchema);
- 
+// Initialize model promise
+const modelPromise = getModel();
+
+// Create a class that mimics the Mongoose model behavior
+class UserModelClass {
+  private static model: Model<IUser>;
+
+  constructor(data: any) {
+    // Return a promise that resolves to a new document
+    return (async () => {
+      const Model = await modelPromise;
+      return new Model(data);
+    })();
+  }
+
+  // Static methods
+  static async find(conditions: any) {
+    const Model = await modelPromise;
+    return Model.find(conditions);
+  }
+
+  static async findOne(conditions: any) {
+    const Model = await modelPromise;
+    return Model.findOne(conditions);
+  }
+
+  static async findById(id: any) {
+    const Model = await modelPromise;
+    return Model.findById(id);
+  }
+
+  static async create(data: any) {
+    const Model = await modelPromise;
+    return Model.create(data);
+  }
+
+  static async updateOne(conditions: any, update: any) {
+    const Model = await modelPromise;
+    return Model.updateOne(conditions, update);
+  }
+
+  static async updateMany(conditions: any, update: any) {
+    const Model = await modelPromise;
+    return Model.updateMany(conditions, update);
+  }
+
+  static async deleteOne(conditions: any) {
+    const Model = await modelPromise;
+    return Model.deleteOne(conditions);
+  }
+
+  static async deleteMany(conditions: any) {
+    const Model = await modelPromise;
+    return Model.deleteMany(conditions);
+  }
+
+  static async exists(conditions: any) {
+    const Model = await modelPromise;
+    return Model.exists(conditions);
+  }
+
+  static async countDocuments(conditions: any) {
+    const Model = await modelPromise;
+    return Model.countDocuments(conditions);
+  }
+}
+
+// Cast to any to avoid TypeScript errors
+const UserModel = UserModelClass as any as Model<IUser>;
+
 export default UserModel;
