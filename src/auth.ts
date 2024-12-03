@@ -18,9 +18,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         try {
           const user = await UserModel.findOne({
             $or: [
-              {email : credentials.email},
-              {username : credentials.username}
-            ]
+              {email : credentials.identifier},
+              {username : credentials.identifier},
+            ],
           })
           if(!user){
             throw new Error("No user found with this email")
